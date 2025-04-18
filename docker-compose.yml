@@ -72,8 +72,6 @@ services:
       dockerfile: ../docker/Dockerfile.auth
     depends_on:
       - postgres-auth
-    #    volumes:
-    #      - ./server:/app
     env_file:
       - ./server/apps/auth/.env
 
@@ -85,8 +83,6 @@ services:
       - postgres-image
       - minio
       - redis
-    #    volumes:
-    #      - ./server:/app
     env_file:
       - ./server/apps/image/.env
 

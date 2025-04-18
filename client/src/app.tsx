@@ -1,11 +1,10 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthPage } from './pages/auth-page';
 import { HomePage } from './pages/home-page';
 import { ProtectedRoute } from './components/protected-route';
 import { Layout } from './components/layout';
 
 function App() {
-
   return (
     <Layout>
       <Routes>
@@ -18,6 +17,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
   );
