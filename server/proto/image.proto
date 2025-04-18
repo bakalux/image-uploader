@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package image;
+
+service ImageService {
+  rpc Upload (UploadRequest) returns (UploadResponse);
+  rpc GetLatestImage (UserRequest) returns (ImageResponse);
+  rpc GetLatestProcessedImage (UserRequest) returns (ProcessedImageResponse);
+}
+
+message UploadRequest {
+  bytes chunk = 1;
+  string filename = 2;
+  string mimetype = 3;
+  string userId = 4;
+}
+message UploadResponse {
+  string id = 1;
+  string status = 2;
+}
+message UserRequest {
+  string userId = 1;
+}
+message ImageResponse {
+  string id = 1;
+  string status = 2;
+  string name = 4;
+  string uploadedAt = 5;
+  string size = 6;
+}
+
+message ProcessedImageResponse {
+  optional string url = 1;
+}
