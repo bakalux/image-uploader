@@ -4,7 +4,7 @@ import { api } from '@/lib/axios.ts';
 export interface LatestImage {
   id: string;
   name: string;
-  status: 'uploaded' | 'processing' | 'processed';
+  status: 'uploaded' | 'processing' | 'processed' | 'failed';
   size: string;
   uploadedAt: string;
 }

@@ -1,9 +1,5 @@
 import { Job, Worker } from 'bullmq';
-import {
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as sharp from 'sharp';
 import { Readable } from 'stream';
 import { DataSource, Repository } from 'typeorm';
@@ -42,39 +38,45 @@ export async function startImageWorker() {
   new Worker(
     'image-processing',
     async (job: Job<{ key: string; id: string; userId: string }>) => {
-      const { key, id, userId } = job.data;
+      try {
+        const { key, id, userId } = job.data;
 
-      console.log('🔧 Обрабатываем:', key);
+        console.log('🔧 Обрабатываем:', key);
 
-      const input = await s3.send(
-        new GetObjectCommand({
-          Bucket: bucket,
-          Key: key,
-        }),
-      );
+        const input = await s3.send(
+          new GetObjectCommand({
+            Bucket: bucket,
+            Key: key,
+          }),
+        );
 
-      const inputBuffer = await streamToBuffer(input.Body as Readable);
+        const inputBuffer = await streamToBuffer(input.Body as Readable);
 
-      const processedBuffer = await sharp(inputBuffer)
-        .webp({ quality: 80 })
-        .toBuffer();
-      const processedKey = `${userId}/${id}-processed.webp`;
+        const processedBuffer = await sharp(inputBuffer)
+          .webp({ quality: 80 })
+          .toBuffer();
+        const processedKey = `${userId}/${id}-processed.webp`;
 
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: bucket,
-          Key: processedKey,
-          Body: processedBuffer,
-          ContentType: 'image/webp',
-        }),
-      );
+        await s3.send(
+          new PutObjectCommand({
+            Bucket: bucket,
+            Key: processedKey,
+            Body: processedBuffer,
+            ContentType: 'image/webp',
+          }),
+        );
 
-      await imageRepo.update(id, {
-        status: 'processed',
-        processedKey,
-      });
+        await imageRepo.update(id, {
+          status: 'processed',
+          processedKey,
+        });
 
-      console.log('✅ Обработка завершена:', processedKey);
+        console.log('✅ Обработка завершена:', processedKey);
+      } catch (error) {
+        await imageRepo.update(job.data.id, {
+          status: 'failed',
+        });
+      }
     },
     {
       connection: {

@@ -6,6 +6,7 @@ const statusLabels: Record<string, string> = {
   uploaded: 'Загружено',
   processing: 'Обрабатывается',
   processed: 'Обработано',
+  failed: 'Произошла ошибка',
 };
 
 export function getImageStatusLabel(status: string): string {
@@ -14,7 +15,7 @@ export function getImageStatusLabel(status: string): string {
 
 export const LatestImageCard = () => {
   const { data: image, isLoading } = useLatestImage();
-  const { data: processedData } = useLatestProcessedImageUrl(image?.status === 'processed');
+  const { data: processedData } = useLatestProcessedImageUrl(image?.status === 'processed' || image?.status === 'failed');
 
   if (isLoading) return <p>Загрузка...</p>;
   if (!image) return <p>Нет загруженных изображений</p>;

@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  ImageResponse,
-  UploadRequest,
-  UploadResponse,
-} from '../../../libs/protos/image';
+import { ImageResponse, UploadRequest, UploadResponse } from '../../../libs/protos/image';
 import { v4 as uuidv4 } from 'uuid';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
@@ -48,48 +44,55 @@ export class ImageService {
   }
 
   async upload(data: UploadRequest): Promise<UploadResponse> {
-    const id = uuidv4();
-    const key = `${data.userId}/${id}-${data.filename}`;
-    const buffer = Buffer.from(data.chunk);
+    try {
+      const id = uuidv4();
+      const key = `${data.userId}/${id}-${data.filename}`;
+      const buffer = Buffer.from(data.chunk);
 
-    const metadata = await sharp(buffer).metadata();
-    const width = metadata.width ?? 0;
-    const height = metadata.height ?? 0;
-    const size = `${width}x${height}`;
+      const metadata = await sharp(buffer).metadata();
+      const width = metadata.width ?? 0;
+      const height = metadata.height ?? 0;
+      const size = `${width}x${height}`;
 
-    await this.s3.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: key,
-        Body: Buffer.from(data.chunk),
-        ContentType: data.mimetype,
-      }),
-    );
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+          Body: Buffer.from(data.chunk),
+          ContentType: data.mimetype,
+        }),
+      );
 
-    await this.imageQueue.add('process', {
-      id,
-      key,
-      userId: data.userId,
-      mimetype: data.mimetype,
-    });
+      await this.imageQueue.add('process', {
+        id,
+        key,
+        userId: data.userId,
+        mimetype: data.mimetype,
+      });
 
-    await this.imageRepository.save({
-      id,
-      originalName: data.filename,
-      key,
-      status: 'processing',
-      size,
-      userId: data.userId,
-    });
+      await this.imageRepository.save({
+        id,
+        originalName: data.filename,
+        key,
+        status: 'processing',
+        size,
+        userId: data.userId,
+      });
 
-    const url = `http://localhost:9000/${this.bucket}/${key}`;
+      const url = `http://localhost:9000/${this.bucket}/${key}`;
 
-    console.log(`✅ Загружено в S3: ${url}`);
+      console.log(`✅ Загружено в S3: ${url}`);
 
-    return {
-      id,
-      status: 'uploaded',
-    };
+      return {
+        id,
+        status: 'uploaded',
+      };
+    } catch (error) {
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: error.message,
+      });
+    }
   }
 
   async getLatestImage(userId: string): Promise<ImageResponse> {
