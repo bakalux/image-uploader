@@ -65,10 +65,6 @@ services:
     depends_on:
       - auth
       - image
-    #    volumes:
-    #      - ./server:/app
-    env_file:
-      - ./server/apps/api-gateway/.env
 
   auth:
     build:
